@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_tractian/core/dependency_injection/service_locator.dart';
 import 'package:flutter_tractian/core/routers/tree_routers.dart';
 import 'package:flutter_tractian/core/theme/theme_default.dart';
 import 'package:go_router/go_router.dart';
 
 void main() {
+  init();
   runApp(const MyApp());
 }
 
