@@ -17,6 +17,7 @@ class MyApp extends StatelessWidget {
     return MaterialApp.router(
       title: 'Challenge Tractian',
       theme: ThemeDefault.themeData,
+      debugShowCheckedModeBanner: false,
       routerConfig: GoRouter(
         initialLocation: TreeRouters.HOME_PAGE,
         routes: [

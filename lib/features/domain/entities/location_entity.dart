@@ -3,9 +3,7 @@ class LocationEntity {
   final String name;
   final String? parentId;
 
-  const LocationEntity({
-    required this.id,
-    required this.name,
-    this.parentId,
-  });
+  const LocationEntity({required this.id, required this.name, this.parentId});
+
+  factory LocationEntity.empty() => LocationEntity(id: '', name: '', parentId: null);
 }

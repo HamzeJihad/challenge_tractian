@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:flutter_tractian/features/domain/entities/company_entity.dart';
+import 'package:go_router/go_router.dart';
 
 class CardCompanyWidget extends StatelessWidget {
   const CardCompanyWidget({super.key, required this.companyEntity});
@@ -10,7 +11,9 @@ class CardCompanyWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: () {},
+      onTap: () {
+        context.push('/assets/${companyEntity.id}');
+      },
       child: Container(
         decoration: BoxDecoration(
           color: const Color(0xff2188FF),

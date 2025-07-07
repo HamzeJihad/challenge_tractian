@@ -20,4 +20,7 @@ class AssetEntity {
   });
 
   bool get isComponent => sensorType != null;
+
+  factory AssetEntity.empty() =>
+      AssetEntity(id: '', name: '', parentId: null, locationId: null, sensorType: null, status: null);
 }
