@@ -30,7 +30,7 @@ class AssetsTreeRepositoryImpl implements AssetsTreeRepository {
   @override
   Future<List<LocationEntity>> fetchAllLocations(String companyId) async {
     try {
-      final allLocations = await dataSource.fetchAllLocations(companyId);
+     final allLocations = await dataSource.fetchAllLocations(companyId);
       return allLocations.map((e) => e.toEntity()).toList();
     } on ServerException catch (e) {
       throw Exception(e.message);
@@ -46,5 +46,4 @@ class AssetsTreeRepositoryImpl implements AssetsTreeRepository {
       throw Exception(e.message);
     }
   }
-
 }

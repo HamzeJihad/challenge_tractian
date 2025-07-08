@@ -23,9 +23,8 @@ class TreeNodeTile extends StatefulWidget {
   @override
   State<TreeNodeTile> createState() => _TreeNodeTileState();
 }
-
 class _TreeNodeTileState extends State<TreeNodeTile> {
-  bool _expanded = false;
+  late bool _expanded;
   List<Widget>? _children;
 
   @override
@@ -34,6 +33,20 @@ class _TreeNodeTileState extends State<TreeNodeTile> {
     _expanded = widget.initiallyExpanded;
     if (_expanded && widget.buildChildren != null) {
       _children = widget.buildChildren!();
+    }
+  }
+
+  @override
+  void didUpdateWidget(covariant TreeNodeTile oldWidget) {
+    super.didUpdateWidget(oldWidget);
+
+    if (widget.initiallyExpanded != oldWidget.initiallyExpanded) {
+      setState(() {
+        _expanded = widget.initiallyExpanded;
+        if (_expanded && widget.buildChildren != null) {
+          _children = widget.buildChildren!();
+        }
+      });
     }
   }
 
@@ -96,7 +109,7 @@ class _TreeNodeTileState extends State<TreeNodeTile> {
         ),
         if (_expanded && _children != null)
           Container(
-            margin: EdgeInsets.only(left: widget.indent+6),
+            margin: EdgeInsets.only(left: widget.indent + 6),
             decoration: BoxDecoration(
               border: Border(
                 left: BorderSide(

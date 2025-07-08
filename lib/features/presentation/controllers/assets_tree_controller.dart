@@ -1,3 +1,4 @@
+
 import 'package:flutter/material.dart';
 import 'package:flutter_tractian/core/enums/service_status.dart';
 import 'package:flutter_tractian/features/domain/entities/asset_entity.dart';
@@ -28,6 +29,8 @@ class AssetsTreeController extends ChangeNotifier {
   List<LocationEntity> get locations => _filteredLocations;
   List<AssetEntity> get assets => _filteredAssets;
 
+  final Set<String> expandedNodeIds = {};
+
   Future<void> loadData(String companyId) async {
     _loadingStatus = ServiceStatus.loading;
     notifyListeners();
@@ -57,24 +60,21 @@ class AssetsTreeController extends ChangeNotifier {
     final filterEnergy = isEnergySensorSelected.value;
     final filterCritical = isCriticalSelected.value;
 
-    // Filters all Assets that match the criteria
-
     final matchingAssets = _assets.where((a) {
       final matchesText = query.isEmpty || a.name.toLowerCase().contains(query);
-      final matchesEnergy = !filterEnergy || (a.sensorType == 'energy');
-      final matchesCritical = !filterCritical || (a.status == 'alert');
+      final matchesEnergy = !filterEnergy || a.sensorType == 'energy';
+      final matchesCritical = !filterCritical || a.status == 'alert';
       return matchesText && matchesEnergy && matchesCritical;
     }).toList();
 
-    // If there is no active filter, everything returns
     if (query.isEmpty && !filterEnergy && !filterCritical) {
       _filteredAssets = List.from(_assets);
       _filteredLocations = List.from(_locations);
+      expandedNodeIds.clear();
       notifyListeners();
       return;
     }
 
-    // Stores the IDs of matching Assets and their parents
     final matchingAssetIds = matchingAssets.map((a) => a.id).toSet();
     final parentsToInclude = <String>{};
     final locationsToInclude = <String>{};
@@ -82,8 +82,8 @@ class AssetsTreeController extends ChangeNotifier {
     void collectLocationParents(String? locationId) {
       if (locationId == null) return;
       final parentLoc = _locations.firstWhereOrNull((l) => l.id == locationId);
-      if (parentLoc != null && parentLoc.parentId != null) {
-        locationsToInclude.add(parentLoc.parentId!);
+      if (parentLoc != null) {
+        locationsToInclude.add(parentLoc.id);
         collectLocationParents(parentLoc.parentId);
       }
     }
@@ -91,7 +91,6 @@ class AssetsTreeController extends ChangeNotifier {
     void collectParents(String? parentId) {
       if (parentId == null) return;
 
-      // Check if it is a parent Asset
       final parentAsset = _assets.firstWhereOrNull((a) => a.id == parentId);
       if (parentAsset != null) {
         parentsToInclude.add(parentAsset.id);
@@ -103,12 +102,10 @@ class AssetsTreeController extends ChangeNotifier {
         return;
       }
 
-      // Check if Location is parent
       locationsToInclude.add(parentId);
       collectLocationParents(parentId);
     }
 
-    // For each Asset that hit the filter, collect parents
     for (final asset in matchingAssets) {
       collectParents(asset.parentId);
       if (asset.locationId != null) {
@@ -117,15 +114,30 @@ class AssetsTreeController extends ChangeNotifier {
       }
     }
 
-    // Assemble final filtered lists
     _filteredAssets = _assets.where((a) {
       return matchingAssetIds.contains(a.id) || parentsToInclude.contains(a.id);
     }).toList();
 
     _filteredLocations = _locations.where((l) {
-      return locationsToInclude.contains(l.id) || (query.isNotEmpty && l.name.toLowerCase().contains(query));
+      final matchesQuery = l.name.toLowerCase().contains(query);
+      return locationsToInclude.contains(l.id) || (query.isNotEmpty && matchesQuery);
     }).toList();
+
+    expandedNodeIds
+      ..clear()
+      ..addAll(parentsToInclude)
+      ..addAll(locationsToInclude);
 
     notifyListeners();
   }
+
+  void resetFilters() {
+  searchController.clear();
+  isEnergySensorSelected.value = false;
+  isCriticalSelected.value = false;
+  expandedNodeIds.clear();
+  _filteredAssets = List.from(_assets);
+  _filteredLocations = List.from(_locations);
+  notifyListeners();
+}
 }

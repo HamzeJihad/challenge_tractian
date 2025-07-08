@@ -1,3 +1,4 @@
+
 import 'package:flutter/material.dart' hide MenuController;
 import 'package:flutter_tractian/core/enums/service_status.dart';
 import 'package:flutter_tractian/features/presentation/controllers/assets_tree_controller.dart';
@@ -25,6 +26,12 @@ class _AssetsTreePageState extends State<AssetsTreePage> {
   }
 
   @override
+  void dispose() {
+  _controller.resetFilters();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Assets')),
@@ -40,7 +47,11 @@ class _AssetsTreePageState extends State<AssetsTreePage> {
             children: [
               AssetsFilterWidget(controller: _controller),
               Expanded(
-                child: AssetsTreeWidget(locations: _controller.locations, assets: _controller.assets),
+                child: AssetsTreeWidget(
+                  locations: _controller.locations,
+                  assets: _controller.assets,
+                  expandedNodeIds: _controller.expandedNodeIds,
+                ),
               ),
             ],
           );

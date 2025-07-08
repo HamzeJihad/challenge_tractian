@@ -6,11 +6,16 @@ import 'package:go_router/go_router.dart';
 
 void main() {
   init();
-  runApp(const MyApp());
+  runApp(MyApp());
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+  MyApp({super.key});
+
+  final GoRouter _router = GoRouter(
+    initialLocation: TreeRouters.HOME_PAGE,
+    routes: [...TreeRoutersPage.router],
+  );
 
   @override
   Widget build(BuildContext context) {
@@ -18,12 +23,7 @@ class MyApp extends StatelessWidget {
       title: 'Challenge Tractian',
       theme: ThemeDefault.themeData,
       debugShowCheckedModeBanner: false,
-      routerConfig: GoRouter(
-        initialLocation: TreeRouters.HOME_PAGE,
-        routes: [
-          ...TreeRoutersPage.router,
-        ],
-      ),
+      routerConfig: _router,
     );
   }
 }
