@@ -7,6 +7,9 @@ Os ativos são essenciais para o funcionamento do setor e podem incluir tudo, de
 ## 🎥 Preview do Projeto
 
 
+https://github.com/user-attachments/assets/bd010000-1956-4c27-90ae-df06db314e1b
+
+
 ---
 
 ## 🏛️ Arquitetura e Decisões de Implementação
