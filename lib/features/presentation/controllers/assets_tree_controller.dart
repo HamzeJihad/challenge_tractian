@@ -4,8 +4,8 @@ import 'package:flutter_tractian/features/domain/entities/asset_entity.dart';
 import 'package:flutter_tractian/features/domain/entities/location_entity.dart';
 import 'package:flutter_tractian/features/domain/usecases/fetch_all_companies_assets_use_case.dart';
 import 'package:flutter_tractian/features/domain/usecases/fetch_all_companies_locations_use_case.dart';
-import 'package:flutter_tractian/features/presentation/utils/flatten_params.dart';
 import 'package:flutter_tractian/features/presentation/models/visible_node.dart';
+import 'package:flutter_tractian/features/presentation/utils/flatten_tree.dart';
 class AssetsTreeController extends ChangeNotifier {
     AssetsTreeController(this.fetchAssets,this.fetchLocations);
 

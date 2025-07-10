@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_tractian/features/presentation/controllers/assets_tree_controller.dart';
+import 'package:flutter_tractian/features/presentation/widgets/chip_filter_widget.dart';
 
 class AssetsFilterWidget extends StatelessWidget {
   final AssetsTreeController controller;
@@ -23,7 +24,10 @@ class AssetsFilterWidget extends StatelessWidget {
                   filled: true,
                   hintText: 'Buscar Ativo ou Local',
                   hintStyle: const TextStyle(
-                      color: Color(0xff8E98A3), fontSize: 14, fontWeight: FontWeight.w400),
+                    color: Color(0xff8E98A3),
+                    fontSize: 14,
+                    fontWeight: FontWeight.w400,
+                  ),
                   isDense: true,
                   contentPadding: EdgeInsets.zero,
                   enabledBorder: OutlineInputBorder(
@@ -37,24 +41,27 @@ class AssetsFilterWidget extends StatelessWidget {
                 ),
               ),
             ),
+
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16.0),
               child: Row(
                 children: [
-                  FilterChip(
-                    label: const Text('Sensor de Energia'),
-                    avatar: const Icon(Icons.bolt, size: 18, color: Colors.white),
-                    selected: controller.filterEnergy,
-                    onSelected: (v) => controller.updateFilterEnergy(v),
-                    selectedColor: const Color(0xff2188FF),
+                  ChipFilterWidget(
+                    isSelected: controller.filterEnergy,
+                    textLabel: 'Sensor de Energia',
+                    icon: Icons.bolt,
+                    onChanged: (value) {
+                      controller.updateFilterEnergy(value!);
+                    },
                   ),
-                  const SizedBox(width: 8),
-                  FilterChip(
-                    label: const Text('Crítico'),
-                    avatar: const Icon(Icons.circle_notifications, size: 18, color: Colors.white),
-                    selected: controller.filterCritical,
-                    onSelected: (v) => controller.updateFilterCritical(v),
-                    selectedColor: const Color(0xffE53E3E),
+                  const SizedBox(width: 16),
+                  ChipFilterWidget(
+                    isSelected: controller.filterCritical,
+                    textLabel: 'Crítico',
+                    icon: Icons.circle_notifications,
+                    onChanged: (value) {
+                      controller.updateFilterCritical(value!);
+                    },
                   ),
                 ],
               ),

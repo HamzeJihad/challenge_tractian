@@ -10,7 +10,7 @@ class ChipFilterWidget extends StatelessWidget {
     this.onChanged,
   });
 
-  final ValueNotifier<bool> isSelected;
+  final bool isSelected;
   final String textLabel;
   final IconData icon;
   final double? iconSize;
@@ -18,29 +18,24 @@ class ChipFilterWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ValueListenableBuilder<bool>(
-      valueListenable: isSelected,
-      builder: (context, selected, _) {
-        return FilterChip(
-          padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 16),
-          label: Text(
-            textLabel,
-            style: TextStyle(
-              fontWeight: FontWeight.w500,
-              color: selected ? Colors.white : const Color(0xff77818C),
-              fontSize: 14,
-            ),
-          ),
-          avatar: Icon(icon, color: selected ? Colors.white : const Color(0xff77818C), size: iconSize ?? 18),
-          side: BorderSide(width: 0.7, color: selected ? const Color(0xff2188FF) : Colors.grey.shade400),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(3)),
-          selected: selected,
-          showCheckmark: false,
-          selectedColor: const Color(0xff2188FF),
-          backgroundColor: Colors.white,
-          onSelected: onChanged,
-        );
-      },
+    return FilterChip(
+      padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 16),
+      label: Text(
+        textLabel,
+        style: TextStyle(
+          fontWeight: FontWeight.w500,
+          color: isSelected ? Colors.white : const Color(0xff77818C),
+          fontSize: 14,
+        ),
+      ),
+      avatar: Icon(icon, color: isSelected ? Colors.white : const Color(0xff77818C), size: iconSize ?? 18),
+      side: BorderSide(width: 0.7, color: isSelected ? const Color(0xff2188FF) : Colors.grey.shade400),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(3)),
+      selected: isSelected,
+      showCheckmark: false,
+      selectedColor: const Color(0xff2188FF),
+      backgroundColor: Colors.white,
+      onSelected: onChanged,
     );
   }
 }
