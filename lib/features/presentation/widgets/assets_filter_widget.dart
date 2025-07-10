@@ -13,7 +13,6 @@ class AssetsFilterWidget extends StatelessWidget {
       builder: (context, _) {
         return Column(
           children: [
-            // Campo de busca
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               child: TextField(
@@ -38,7 +37,6 @@ class AssetsFilterWidget extends StatelessWidget {
                 ),
               ),
             ),
-            // Chips de filtro
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16.0),
               child: Row(
