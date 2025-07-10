@@ -6,8 +6,9 @@ import 'package:flutter_tractian/features/domain/usecases/fetch_all_companies_as
 import 'package:flutter_tractian/features/domain/usecases/fetch_all_companies_locations_use_case.dart';
 import 'package:flutter_tractian/features/presentation/models/visible_node.dart';
 import 'package:flutter_tractian/features/presentation/utils/flatten_tree.dart';
+
 class AssetsTreeController extends ChangeNotifier {
-    AssetsTreeController(this.fetchAssets,this.fetchLocations);
+  AssetsTreeController(this.fetchAssets, this.fetchLocations);
 
   final FetchAllCompaniesLocationsUseCase fetchLocations;
   final FetchAllCompaniesAssetsUseCase fetchAssets;
@@ -21,7 +22,6 @@ class AssetsTreeController extends ChangeNotifier {
   String searchText = '';
 
   List<VisibleNode> visibleNodes = [];
-
 
   Future<void> loadData(String companyId) async {
     loadingStatus = ServiceStatus.loading;
@@ -73,14 +73,16 @@ class AssetsTreeController extends ChangeNotifier {
         .map((l) => {'id': l.id, 'name': l.name, 'parentId': l.parentId, 'locationId': null})
         .toList();
     final assetJson = assets
-        .map((a) => {
-              'id': a.id,
-              'name': a.name,
-              'parentId': a.parentId,
-              'locationId': a.locationId,
-              'sensorType': a.sensorType,
-              'status': a.status,
-            })
+        .map(
+          (a) => {
+            'id': a.id,
+            'name': a.name,
+            'parentId': a.parentId,
+            'locationId': a.locationId,
+            'sensorType': a.sensorType,
+            'status': a.status,
+          },
+        )
         .toList();
 
     final params = {
@@ -92,13 +94,21 @@ class AssetsTreeController extends ChangeNotifier {
       'searchText': searchText,
     };
 
-    final flat = await compute(flattenTree, params);
-    visibleNodes = flat.map((m) {
+    final result = await compute(flattenTree, params);
+
+    final nodesList = List<Map<String, dynamic>>.from(result[0]['nodes']);
+    final autoExpandedIds = List<String>.from(result[0]['autoExpandedIds']);
+
+    for (final id in autoExpandedIds) {
+      expandedIds.add(id);
+    }
+
+    visibleNodes = nodesList.map((m) {
       final iconPath = m['iconType'] == 'location'
           ? 'assets/images/location_icon.svg'
           : m['iconType'] == 'asset'
-              ? 'assets/images/asset_icon.svg'
-              : 'assets/images/component_icon.svg';
+          ? 'assets/images/asset_icon.svg'
+          : 'assets/images/component_icon.svg';
       return VisibleNode(
         id: m['id'],
         title: m['title'],
