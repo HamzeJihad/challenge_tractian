@@ -17,6 +17,9 @@ class AssetsTreeController extends ChangeNotifier {
   List<LocationEntity> locations = [];
   List<AssetEntity> assets = [];
   Set<String> expandedIds = {};
+  final Set<String> manualExpandedIds = {};
+  final Set<String> manualCollapsedIds = {};
+
   bool filterEnergy = false;
   bool filterCritical = false;
   String searchText = '';
@@ -38,9 +41,14 @@ class AssetsTreeController extends ChangeNotifier {
   }
 
   void toggleExpand(String id) {
-    if (!expandedIds.remove(id)) {
-      expandedIds.add(id);
+    if (expandedIds.contains(id)) {
+      manualCollapsedIds.add(id);
+      manualExpandedIds.remove(id);
+    } else {
+      manualExpandedIds.add(id);
+      manualCollapsedIds.remove(id);
     }
+
     _computeVisible();
   }
 
@@ -85,23 +93,22 @@ class AssetsTreeController extends ChangeNotifier {
         )
         .toList();
 
-    final params = {
+    final expandedIdsSnapshot = manualExpandedIds.toSet();
+    final collapsedIdsSnapshot = manualCollapsedIds.toSet();
+
+    final result = await compute(flattenTree, {
       'locations': locJson,
       'assets': assetJson,
-      'expandedIds': expandedIds.toList(),
+      'expandedIds': expandedIdsSnapshot.toList(),
+      'collapsedIds': collapsedIdsSnapshot.toList(),
       'filterEnergy': filterEnergy,
       'filterCritical': filterCritical,
       'searchText': searchText,
-    };
-
-    final result = await compute(flattenTree, params);
+    });
 
     final nodesList = List<Map<String, dynamic>>.from(result[0]['nodes']);
     final autoExpandedIds = List<String>.from(result[0]['autoExpandedIds']);
-
-    for (final id in autoExpandedIds) {
-      expandedIds.add(id);
-    }
+    expandedIds = {...manualExpandedIds, ...autoExpandedIds};
 
     visibleNodes = nodesList.map((m) {
       final iconPath = m['iconType'] == 'location'
@@ -117,6 +124,7 @@ class AssetsTreeController extends ChangeNotifier {
         isComponent: m['isComponent'],
         status: m['status'],
         sensorType: m['sensorType'],
+        expanded: m['expanded'],
       );
     }).toList();
 

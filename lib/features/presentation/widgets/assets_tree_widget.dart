@@ -19,7 +19,7 @@ class AssetsTreeWidget extends StatelessWidget {
           itemCount: controller.visibleNodes.length,
           itemBuilder: (_, idx) {
             final node = controller.visibleNodes[idx];
-            final isExpanded = controller.expandedIds.contains(node.id);
+            final isExpanded = node.expanded;
             Widget? statusIcon;
             if (node.isComponent) {
               statusIcon = _buildStatusIcon(node.status, node.sensorType);

@@ -3,6 +3,8 @@ import 'flatten_params.dart';
 // Function that will be executed in an isolate to generate the flat list of visible nodes
 List<Map<String, dynamic>> flattenTree(Map<String, dynamic> args) {
   final params = FlattenParams.fromMap(args);
+  final collapsedIds = List<String>.from(args['collapsedIds'] ?? []);
+
   // 1) builds a map ID → Node
   final nodes = <String, Node>{};
   for (var loc in params.locations) nodes[loc['id']] = Node(loc);
@@ -30,19 +32,21 @@ List<Map<String, dynamic>> flattenTree(Map<String, dynamic> args) {
     if (params.filterCritical && n.data['status'] != 'alert') return false;
     return true;
   }
-  // 3) filter function
+
   bool walkFilter(Node n) {
     bool include = matches(n);
     for (var c in n.children) {
       if (walkFilter(c)) {
         include = true;
-        autoExpandedIds.add(n.data['id']);
+        if (!collapsedIds.contains(n.data['id'])) {
+          autoExpandedIds.add(n.data['id']);
+        }
       }
     }
     return include;
   }
 
-  // 4) recursive walk generating the List<Map>
+ // 4) recursive walk generating the List<Map>
   void walk(Node n, double indent) {
     if (!walkFilter(n)) return;
 
@@ -53,6 +57,9 @@ List<Map<String, dynamic>> flattenTree(Map<String, dynamic> args) {
             ? 'asset'
             : 'location';
 
+    final isExpanded = !collapsedIds.contains(n.data['id']) &&
+        (params.expandedIds.contains(n.data['id']) || autoExpandedIds.contains(n.data['id']));
+
     result.add({
       'id': n.data['id'],
       'title': n.data['name'],
@@ -61,10 +68,10 @@ List<Map<String, dynamic>> flattenTree(Map<String, dynamic> args) {
       'isComponent': isComponent,
       'status': n.data['status'],
       'sensorType': n.data['sensorType'],
-      'expanded': params.expandedIds.contains(n.data['id']),
+      'expanded': isExpanded,
     });
 
-    if (params.expandedIds.contains(n.data['id']) || autoExpandedIds.contains(n.data['id'])) {
+    if (isExpanded) {
       for (var c in n.children) {
         walk(c, indent + 6);
       }
@@ -76,9 +83,6 @@ List<Map<String, dynamic>> flattenTree(Map<String, dynamic> args) {
   }
 
   return [
-    {
-      'nodes': result,
-      'autoExpandedIds': autoExpandedIds.toList(),
-    }
+    {'nodes': result, 'autoExpandedIds': autoExpandedIds.toList()},
   ];
 }

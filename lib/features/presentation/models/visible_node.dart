@@ -6,6 +6,7 @@ class VisibleNode {
   final bool isComponent;
   final String? status;
   final String? sensorType;
+  final bool expanded;
 
   VisibleNode({
     required this.id,
@@ -13,8 +14,8 @@ class VisibleNode {
     required this.iconPath,
     required this.indent,
     required this.isComponent,
-    this.status,
-    this.sensorType,
+    required this.status,
+    required this.sensorType,
+    required this.expanded,
   });
 }
-
