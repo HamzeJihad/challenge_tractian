@@ -48,9 +48,7 @@ class _AssetsTreePageState extends State<AssetsTreePage> {
               AssetsFilterWidget(controller: _controller),
               Expanded(
                 child: AssetsTreeWidget(
-                  locations: _controller.locations,
-                  assets: _controller.assets,
-                  expandedNodeIds: _controller.expandedNodeIds,
+                 controller: _controller,
                 ),
               ),
             ],

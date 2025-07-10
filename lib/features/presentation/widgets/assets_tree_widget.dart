@@ -1,159 +1,83 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_tractian/features/domain/entities/asset_entity.dart';
-import 'package:flutter_tractian/features/domain/entities/location_entity.dart';
-import 'package:flutter_tractian/features/presentation/widgets/tree_node_tile.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
-class AssetsTreeWidget extends StatelessWidget {
-  final List<LocationEntity> locations;
-  final List<AssetEntity> assets;
-  final Set<String> expandedNodeIds;
+import '../controllers/assets_tree_controller.dart';
 
-  const AssetsTreeWidget({
-    super.key,
-    required this.locations,
-    required this.assets,
-    required this.expandedNodeIds,
-  });
+class AssetsTreeWidget extends StatelessWidget {
+  final AssetsTreeController controller;
+
+  const AssetsTreeWidget({super.key, required this.controller});
 
   @override
   Widget build(BuildContext context) {
-    return ListView(
-      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 2),
-      children: [
-        // Locais principais
-        ...locations
-            .where((l) => l.parentId == null)
-            .map((location) => _buildLocationNode(location, indent: 0)),
-
-        // Ativos soltos (sem local nem parent)
-        ...assets
-            .where((a) => a.locationId == null && a.parentId == null)
-            .map((a) => _buildAssetOrComponentNode(a, indent: 0)),
-
-        // Componentes soltos com apenas location
-        ...assets
-            .where((a) =>
-                a.locationId != null &&
-                a.parentId == null &&
-                a.isComponent &&
-                !locations.any((l) => l.id == a.locationId))
-            .map((a) => _buildAssetOrComponentNode(a, indent: 0)),
-      ],
-    );
-  }
-
-  Widget _buildLocationNode(LocationEntity location, {required double indent}) {
-    return TreeNodeTile(
-      title: location.name,
-      iconPath: 'assets/images/location_icon.svg',
-      indent: indent,
-      initiallyExpanded: expandedNodeIds.contains(location.id),
-      buildChildren: () {
-        final subLocations = locations
-            .where((l) => l.parentId == location.id)
-            .map((l) => _buildLocationNode(l, indent: indent + 6))
-            .toList();
-
-        final locationAssets = assets
-            .where((a) =>
-                a.locationId == location.id &&
-                a.parentId == null &&
-                !a.isComponent)
-            .map((a) => _buildAssetOrComponentNode(a, indent: indent + 6))
-            .toList();
-
-        final locationComponents = assets
-            .where((a) =>
-                a.locationId == location.id &&
-                a.parentId == null &&
-                a.isComponent)
-            .map((a) => _buildAssetOrComponentNode(a, indent: indent + 6))
-            .toList();
-
-        return [
-          ...subLocations,
-          ...locationAssets,
-          ...locationComponents,
-        ];
+    return AnimatedBuilder(
+      animation: controller,
+      builder: (_, __) {
+        return ListView.builder(
+          padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 2),
+          itemCount: controller.visibleNodes.length,
+          itemBuilder: (_, idx) {
+            final node = controller.visibleNodes[idx];
+            final isExpanded = controller.expandedIds.contains(node.id);
+            Widget? statusIcon;
+            if (node.isComponent) {
+              statusIcon = _buildStatusIcon(node.status, node.sensorType);
+            }
+            return Padding(
+              padding: EdgeInsets.only(left: node.indent, top: 1, bottom: 1),
+              child: InkWell(
+                onTap: !node.isComponent ? () => controller.toggleExpand(node.id) : null,
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    SizedBox(
+                      width: 18,
+                      child: node.isComponent
+                          ? null
+                          : Icon(
+                              isExpanded ? Icons.keyboard_arrow_down : Icons.keyboard_arrow_right,
+                              size: 14,
+                              color: Colors.grey[700],
+                            ),
+                    ),
+                    SvgPicture.asset(
+                      node.iconPath,
+                      height: 18,
+                      colorFilter: const ColorFilter.mode(Color(0xFF1565C0), BlendMode.srcIn),
+                    ),
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: Text(
+                        node.title,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w400),
+                      ),
+                    ),
+                    if (statusIcon != null) ...[
+                      const SizedBox(width: 4),
+                      statusIcon,
+                    ],
+                  ],
+                ),
+              ),
+            );
+          },
+        );
       },
     );
   }
 
-  Widget _buildAssetOrComponentNode(AssetEntity asset, {required double indent}) {
-    final isComponent = asset.isComponent;
-
-    Widget? statusIcon = isComponent
-        ? buildStatusIcon(asset.status, asset.sensorType)
-        : getAssetStatusIcon(asset.id);
-
-    if (isComponent) {
-      return TreeNodeTile(
-        title: asset.name,
-        iconPath: 'assets/images/component_icon.svg',
-        indent: indent,
-        statusIcon: statusIcon,
-        initiallyExpanded: false,
-      );
-    }
-
-    return TreeNodeTile(
-      title: asset.name,
-      iconPath: 'assets/images/asset_icon.svg',
-      indent: indent,
-      statusIcon: statusIcon,
-      initiallyExpanded: expandedNodeIds.contains(asset.id),
-      buildChildren: () {
-        final subAssets = assets
-            .where((a) => a.parentId == asset.id && !a.isComponent)
-            .map((a) => _buildAssetOrComponentNode(a, indent: indent + 6))
-            .toList();
-
-        final components = assets
-            .where((a) => a.parentId == asset.id && a.isComponent)
-            .map((c) => _buildAssetOrComponentNode(c, indent: indent + 6))
-            .toList();
-
-        return [...subAssets, ...components];
-      },
-    );
-  }
-
-  Widget? getAssetStatusIcon(String assetId) {
-    final children = assets.where((a) => a.parentId == assetId).toList();
-
-    final hasAlert = children.any((a) => a.status == 'alert');
-    if (hasAlert) {
-      return const Icon(Icons.circle, size: 14, color: Colors.red);
-    }
-
-    final hasVibration = children.any((a) => a.sensorType == 'vibration');
-    if (hasVibration) {
-      return const Icon(FontAwesomeIcons.waveSquare, size: 12, color: Colors.blue);
-    }
-
-    final allOperating = children.isNotEmpty && children.every((a) => a.status == 'operating');
-    if (allOperating) {
-      return const Icon(Icons.bolt, size: 14, color: Colors.green);
-    }
-
-    return null;
-  }
-
-  Widget? buildStatusIcon(String? status, String? sensorType) {
+  Widget? _buildStatusIcon(String? status, String? sensorType) {
     if (status == 'alert') {
       return const Icon(Icons.circle, size: 14, color: Colors.red);
     }
-
     if (sensorType == 'vibration') {
-      return const Icon(FontAwesomeIcons.waveSquare, size: 12, color: Colors.blue);
+      return const Icon(FontAwesomeIcons.waveSquare, size: 14, color: Colors.blue);
     }
-
     if (status == 'operating') {
       return const Icon(Icons.bolt, size: 14, color: Colors.green);
     }
-
     return null;
   }
 }
-

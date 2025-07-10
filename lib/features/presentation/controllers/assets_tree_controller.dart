@@ -1,143 +1,115 @@
-
-import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_tractian/core/enums/service_status.dart';
 import 'package:flutter_tractian/features/domain/entities/asset_entity.dart';
 import 'package:flutter_tractian/features/domain/entities/location_entity.dart';
 import 'package:flutter_tractian/features/domain/usecases/fetch_all_companies_assets_use_case.dart';
 import 'package:flutter_tractian/features/domain/usecases/fetch_all_companies_locations_use_case.dart';
-import 'package:collection/collection.dart';
-
+import 'package:flutter_tractian/features/presentation/utils/flatten_params.dart';
+import 'package:flutter_tractian/features/presentation/models/visible_node.dart';
 class AssetsTreeController extends ChangeNotifier {
-  final FetchAllCompaniesAssetsUseCase fetchAssetsUseCase;
-  final FetchAllCompaniesLocationsUseCase fetchLocationsUseCase;
+    AssetsTreeController(this.fetchAssets,this.fetchLocations);
 
-  AssetsTreeController(this.fetchAssetsUseCase, this.fetchLocationsUseCase);
+  final FetchAllCompaniesLocationsUseCase fetchLocations;
+  final FetchAllCompaniesAssetsUseCase fetchAssets;
 
-  ServiceStatus _loadingStatus = ServiceStatus.loading;
-  ServiceStatus get loadingStatus => _loadingStatus;
+  ServiceStatus loadingStatus = ServiceStatus.loading;
+  List<LocationEntity> locations = [];
+  List<AssetEntity> assets = [];
+  Set<String> expandedIds = {};
+  bool filterEnergy = false;
+  bool filterCritical = false;
+  String searchText = '';
 
-  final TextEditingController searchController = TextEditingController();
-  final ValueNotifier<bool> isEnergySensorSelected = ValueNotifier(false);
-  final ValueNotifier<bool> isCriticalSelected = ValueNotifier(false);
+  List<VisibleNode> visibleNodes = [];
 
-  List<LocationEntity> _locations = [];
-  List<AssetEntity> _assets = [];
-
-  List<LocationEntity> _filteredLocations = [];
-  List<AssetEntity> _filteredAssets = [];
-
-  List<LocationEntity> get locations => _filteredLocations;
-  List<AssetEntity> get assets => _filteredAssets;
-
-  final Set<String> expandedNodeIds = {};
 
   Future<void> loadData(String companyId) async {
-    _loadingStatus = ServiceStatus.loading;
+    loadingStatus = ServiceStatus.loading;
     notifyListeners();
-
     try {
-      final locationsFuture = fetchLocationsUseCase(companyId);
-      final assetsFuture = fetchAssetsUseCase(companyId);
-
-      final results = await Future.wait([locationsFuture, assetsFuture]);
-
-      _locations = results[0] as List<LocationEntity>;
-      _assets = results[1] as List<AssetEntity>;
-
-      _filteredLocations = List.from(_locations);
-      _filteredAssets = List.from(_assets);
-
-      _loadingStatus = ServiceStatus.done;
-      notifyListeners();
+      locations = await fetchLocations(companyId);
+      assets = await fetchAssets(companyId);
+      _computeVisible();
+      loadingStatus = ServiceStatus.done;
     } catch (e) {
-      _loadingStatus = ServiceStatus.error;
+      loadingStatus = ServiceStatus.error;
       notifyListeners();
     }
   }
 
-  void filterTree() {
-    final query = searchController.text.toLowerCase();
-    final filterEnergy = isEnergySensorSelected.value;
-    final filterCritical = isCriticalSelected.value;
-
-    final matchingAssets = _assets.where((a) {
-      final matchesText = query.isEmpty || a.name.toLowerCase().contains(query);
-      final matchesEnergy = !filterEnergy || a.sensorType == 'energy';
-      final matchesCritical = !filterCritical || a.status == 'alert';
-      return matchesText && matchesEnergy && matchesCritical;
-    }).toList();
-
-    if (query.isEmpty && !filterEnergy && !filterCritical) {
-      _filteredAssets = List.from(_assets);
-      _filteredLocations = List.from(_locations);
-      expandedNodeIds.clear();
-      notifyListeners();
-      return;
+  void toggleExpand(String id) {
+    if (!expandedIds.remove(id)) {
+      expandedIds.add(id);
     }
+    _computeVisible();
+  }
 
-    final matchingAssetIds = matchingAssets.map((a) => a.id).toSet();
-    final parentsToInclude = <String>{};
-    final locationsToInclude = <String>{};
+  void updateSearch(String text) {
+    searchText = text;
+    _computeVisible();
+  }
 
-    void collectLocationParents(String? locationId) {
-      if (locationId == null) return;
-      final parentLoc = _locations.firstWhereOrNull((l) => l.id == locationId);
-      if (parentLoc != null) {
-        locationsToInclude.add(parentLoc.id);
-        collectLocationParents(parentLoc.parentId);
-      }
-    }
+  void updateFilterEnergy(bool value) {
+    filterEnergy = value;
+    _computeVisible();
+  }
 
-    void collectParents(String? parentId) {
-      if (parentId == null) return;
-
-      final parentAsset = _assets.firstWhereOrNull((a) => a.id == parentId);
-      if (parentAsset != null) {
-        parentsToInclude.add(parentAsset.id);
-        collectParents(parentAsset.parentId);
-        if (parentAsset.locationId != null) {
-          locationsToInclude.add(parentAsset.locationId!);
-          collectLocationParents(parentAsset.locationId);
-        }
-        return;
-      }
-
-      locationsToInclude.add(parentId);
-      collectLocationParents(parentId);
-    }
-
-    for (final asset in matchingAssets) {
-      collectParents(asset.parentId);
-      if (asset.locationId != null) {
-        locationsToInclude.add(asset.locationId!);
-        collectLocationParents(asset.locationId);
-      }
-    }
-
-    _filteredAssets = _assets.where((a) {
-      return matchingAssetIds.contains(a.id) || parentsToInclude.contains(a.id);
-    }).toList();
-
-    _filteredLocations = _locations.where((l) {
-      final matchesQuery = l.name.toLowerCase().contains(query);
-      return locationsToInclude.contains(l.id) || (query.isNotEmpty && matchesQuery);
-    }).toList();
-
-    expandedNodeIds
-      ..clear()
-      ..addAll(parentsToInclude)
-      ..addAll(locationsToInclude);
-
-    notifyListeners();
+  void updateFilterCritical(bool value) {
+    filterCritical = value;
+    _computeVisible();
   }
 
   void resetFilters() {
-  searchController.clear();
-  isEnergySensorSelected.value = false;
-  isCriticalSelected.value = false;
-  expandedNodeIds.clear();
-  _filteredAssets = List.from(_assets);
-  _filteredLocations = List.from(_locations);
-  notifyListeners();
-}
+    filterEnergy = false;
+    filterCritical = false;
+    searchText = '';
+    expandedIds.clear();
+    visibleNodes.clear();
+    notifyListeners();
+  }
+
+  Future<void> _computeVisible() async {
+    final locJson = locations
+        .map((l) => {'id': l.id, 'name': l.name, 'parentId': l.parentId, 'locationId': null})
+        .toList();
+    final assetJson = assets
+        .map((a) => {
+              'id': a.id,
+              'name': a.name,
+              'parentId': a.parentId,
+              'locationId': a.locationId,
+              'sensorType': a.sensorType,
+              'status': a.status,
+            })
+        .toList();
+
+    final params = {
+      'locations': locJson,
+      'assets': assetJson,
+      'expandedIds': expandedIds.toList(),
+      'filterEnergy': filterEnergy,
+      'filterCritical': filterCritical,
+      'searchText': searchText,
+    };
+
+    final flat = await compute(flattenTree, params);
+    visibleNodes = flat.map((m) {
+      final iconPath = m['iconType'] == 'location'
+          ? 'assets/images/location_icon.svg'
+          : m['iconType'] == 'asset'
+              ? 'assets/images/asset_icon.svg'
+              : 'assets/images/component_icon.svg';
+      return VisibleNode(
+        id: m['id'],
+        title: m['title'],
+        iconPath: iconPath,
+        indent: m['indent'],
+        isComponent: m['isComponent'],
+        status: m['status'],
+        sensorType: m['sensorType'],
+      );
+    }).toList();
+
+    notifyListeners();
+  }
 }
