@@ -65,6 +65,21 @@ A seleção de pacotes foi mínima e estratégica:
 
 ---
 
+## 🚀 Melhorias Futuras
+
+Caso tivesse mais tempo para evoluir a aplicação, algumas melhorias que consideraria implementar seriam:
+
+- **Persistência de Estado e Cache Local**  
+  Implementaria persistência local para manter o estado da árvore (nós expandidos, filtros aplicados, etc.) entre sessões e adicionaria um cache local para reduzir chamadas repetidas à API.
+
+- **Animações de Expansão e Feedback Visual**  
+  Adicionaria transições animadas ao expandir e colapsar nós, além de indicadores visuais mais claros, para melhorar a percepção de hierarquia e navegação dentro da árvore.
+
+- **Testes Automatizados (Unitários e Widget)**  
+  Criaria uma estrutura de testes robusta para garantir a integridade da lógica da árvore, a estabilidade da UI e a correta aplicação dos filtros. Os testes também ajudariam a prevenir regressões em futuras evoluções.
+
+---
+
 ## ✅ Conclusão
 
 Este projeto demonstra como é possível construir uma interface hierárquica avançada em Flutter com:
